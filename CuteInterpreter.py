@@ -206,7 +206,12 @@ class Node (object):
         self.value = value
         self.type  = type
 
-
+    def __len__(self):
+        nodeOfLength = 1
+        while self.next is not None:
+            nodeOfLength = nodeOfLength + 1
+            self = self.next
+        return nodeOfLength
 
     def set_last_next(self, next_node):
         if self.next is not None:
@@ -397,7 +402,8 @@ class CuteInterpreter(object):
 
     def run_func(self, func_node):
         rhs1 = func_node.next
-        rhs2 = rhs1.next if rhs1.next is not None else None
+        if rhs1 is not None:
+            rhs2 = rhs1.next if rhs1.next is not None else None
 
         def create_quote_node(node, list_flag = False):
             """
@@ -445,7 +451,7 @@ class CuteInterpreter(object):
             else:
                 insertTable(rhs1.value, rhs2.value)
 
-        else:
+        elif rhs1 is not None and func_node.value.type is not TokenType.LAMBDA:
             if symbolTable.has_key(rhs1.value):
                 rhs1 = self.lookupTable(rhs1)
             elif rhs1.type is TokenType.ID:
@@ -455,6 +461,67 @@ class CuteInterpreter(object):
                 rhs2 = self.lookupTable(rhs2)
             elif type(rhs2) is Node and rhs2.type is TokenType.ID:
                 return self.undefinedHandler(rhs2.value)
+
+        if func_node.type is TokenType.LAMBDA:
+            return Node(TokenType.LIST, func_node)
+
+        elif func_node.value is not None and func_node.value.type is TokenType.LAMBDA:
+            formalParam = func_node.value.next.value
+            actualParam = func_node.next
+
+            if formalParam is not None: lenOfFormalParam = len(formalParam)
+            else: lenOfFormalParam = 0
+            if actualParam is not None: lenOfActualParam = len(actualParam)
+            else: lenOfActualParam = 0
+
+            temp = actualParam
+            for i in range(0, lenOfActualParam):
+                if temp.type is TokenType.ID:
+                    if temp.value in symbolTable:
+                        temp.value = self.lookupTable(Node(TokenType.ID, temp.value)).value
+                    else:
+                        return self.undefinedHandler(temp.value)
+                temp = temp.next
+
+            if lenOfFormalParam != lenOfActualParam:
+                print "the expected number of arguments does not match the given number"
+                print "expected:", lenOfFormalParam
+                print "given:", lenOfActualParam
+                print "arguments...:"
+                if actualParam is not None:
+                    while actualParam.next is not None:
+                        print " " + actualParam.value
+                        actualParam = actualParam.next
+                    print " " + actualParam.value
+                return None
+            else:
+                listOfFormal = [] # formal 리스트
+                listOfActual = [] # actual 리스트
+                checkList = [] # 테이블에 있었는지 검사하는 리스트
+                tempList = [] # 테이블에 원래 있었던 리스트
+
+                for i in range(0, lenOfFormalParam):
+                    listOfFormal.append(formalParam.value)
+                    listOfActual.append(actualParam.value)
+                    formalParam = formalParam.next
+                    actualParam = actualParam.next
+                    if listOfFormal[i] in symbolTable:
+                        checkList.append(True)
+                        tempList.append(self.lookupTable(Node(TokenType.ID, listOfFormal[i])))
+                    else:
+                        checkList.append(False)
+                        tempList.append(None)
+                    insertTable(listOfFormal[i], listOfActual[i])
+
+                expr = self.run_expr(func_node.value.next.next)
+
+                for i in range(0, lenOfFormalParam):
+                    if checkList[i] is True:
+                        insertTable(listOfFormal[i], tempList[i].value)
+                    else:
+                        del symbolTable[listOfFormal[i]]
+
+                return expr
 
         if func_node.type is not TokenType.COND:
             expr_rhs1 = self.run_expr(rhs1)
@@ -595,6 +662,8 @@ class CuteInterpreter(object):
                 [TokenType.DEFINE, TokenType.CAR, TokenType.CDR, TokenType.CONS, TokenType.ATOM_Q,\
                  TokenType.EQ_Q, TokenType.NULL_Q, TokenType.NOT, TokenType.COND]:
             return self.run_func(op_code)
+        if op_code.type is TokenType.LAMBDA or op_code.value.type is TokenType.LAMBDA:
+            return self.run_func(op_code)
         if op_code.type is TokenType.QUOTE:
             return l_node
         else:
@@ -686,6 +755,11 @@ def Test_method(input):
         print "…", printNode
 
 def Test_All():
+    #Test_method("( lambda ( x ) ( + x 1 ) )")
+    #Test_method("( define x 5 )")
+    #Test_method("( ( lambda ( x ) ( + x 1 ) ) 2 )")
+    #Test_method("( ( lambda ( x ) ( + x 1 ) ) a b )")
+
     while True:
         input = raw_input("> ")
         Test_method(input)
