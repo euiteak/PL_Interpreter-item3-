@@ -496,15 +496,27 @@ class CuteInterpreter(object):
                         tempList.append(None)
                     insertTable(listOfFormal[i], listOfActual[i])
 
-                expr = self.run_expr(func_node.value.next.next)
+                code = func_node.value.next.next
+                expr = self.run_expr(code)
+                while expr is None and code.next is not None:
+                    expr = self.run_expr(code.next)
+                    code = code.next
 
+                if expr.type is TokenType.LIST and expr.value.value in symbolTable:
+                    expr.value.next = self.run_expr(expr.value.next)
+                if expr.type is TokenType.LIST and expr.value.next.value in symbolTable:
+                    expr = self.run_expr(expr)
+                keyList = symbolTable.keys()
                 for i in range(0, lenOfFormalParam):
                     if checkList[i] is True:
                         insertTable(listOfFormal[i], tempList[i].value)
                     else:
                         del symbolTable[listOfFormal[i]]
+                for i in range(0, len(keyList)):
+                    if keyList[i] not in originalList and keyList[i] in symbolTable:
+                        del symbolTable[keyList[i]]
 
-                return expr
+                return self.run_expr(expr)
 
         if func_node.type is TokenType.DEFINE:
             rhs2 = self.run_expr(rhs2)
