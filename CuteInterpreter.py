@@ -443,6 +443,7 @@ class CuteInterpreter(object):
 
         def insertTable(id, value):
             symbolTable[id] = value
+
         if func_node.type is TokenType.LAMBDA:
             return Node(TokenType.LIST, func_node)
 
@@ -480,6 +481,7 @@ class CuteInterpreter(object):
                 listOfActual = [] # actual 리스트
                 checkList = [] # 테이블에 있었는지 검사하는 리스트
                 tempList = [] # 테이블에 원래 있었던 리스트
+                originalList = symbolTable.keys()
 
                 for i in range(0, lenOfFormalParam):
                     listOfFormal.append(formalParam.value)
@@ -503,6 +505,7 @@ class CuteInterpreter(object):
                         del symbolTable[listOfFormal[i]]
 
                 return expr
+
         if func_node.type is TokenType.DEFINE:
             rhs2 = self.run_expr(rhs2)
             if rhs2.type in [TokenType.TRUE, TokenType.FALSE]:
@@ -510,7 +513,8 @@ class CuteInterpreter(object):
             else:
                 insertTable(rhs1.value, rhs2.value)
 
-        elif rhs1 is not None and func_node.value.type is not TokenType.LAMBDA:
+        #elif rhs1 is not None and func_node.value.type is not TokenType.LAMBDA:
+        else:
             if symbolTable.has_key(rhs1.value):
                 rhs1 = self.lookupTable(rhs1)
             elif rhs1.type is TokenType.ID:
