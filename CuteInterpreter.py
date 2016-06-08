@@ -677,10 +677,15 @@ class CuteInterpreter(object):
                 [TokenType.DEFINE, TokenType.CAR, TokenType.CDR, TokenType.CONS, TokenType.ATOM_Q,\
                  TokenType.EQ_Q, TokenType.NULL_Q, TokenType.NOT, TokenType.COND]:
             return self.run_func(op_code)
-        if op_code.type is TokenType.LAMBDA or op_code.value.type is TokenType.LAMBDA:
-            return self.run_func(op_code)
         if op_code.type is TokenType.QUOTE:
             return l_node
+        if op_code.type is TokenType.ID:
+            param = op_code.next
+            op_code = self.lookupTable(Node(TokenType.ID, op_code.value))
+            op_code.next = param
+            return self.run_func(op_code)
+        if op_code.type is TokenType.LAMBDA or op_code.value.type is TokenType.LAMBDA:
+            return self.run_func(op_code)
         else:
             print "application: not a procedure;"
             print "expected a procedure that can be applied to arguments"
@@ -774,7 +779,8 @@ def Test_All():
     # Test_method("( define x 5 )")
     # Test_method("( ( lambda ( x ) ( + x 1 ) ) 2 )")
     # Test_method("( ( lambda ( x ) ( + x 1 ) ) a b )")
-
+    Test_method("( define lastitem ( lambda ( ls ) ( cond ( ( null? ( cdr ls ) ) ( car ls ) ) ( #T ( lastitem ( cdr ls ) ) ) ) ) )")
+    Test_method("( lastitem ' ( 1 2 3 4 5 ) )")
     while True:
         input = raw_input("> ")
         Test_method(input)
