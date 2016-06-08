@@ -443,25 +443,6 @@ class CuteInterpreter(object):
 
         def insertTable(id, value):
             symbolTable[id] = value
-
-        if func_node.type is TokenType.DEFINE:
-            rhs2 = self.run_expr(rhs2)
-            if rhs2.type in [TokenType.TRUE, TokenType.FALSE]:
-                insertTable(rhs1.value, rhs2)
-            else:
-                insertTable(rhs1.value, rhs2.value)
-
-        elif rhs1 is not None and func_node.value.type is not TokenType.LAMBDA:
-            if symbolTable.has_key(rhs1.value):
-                rhs1 = self.lookupTable(rhs1)
-            elif rhs1.type is TokenType.ID:
-                return self.undefinedHandler(rhs1.value)
-
-            if rhs2 is not None and symbolTable.has_key(rhs2.value):
-                rhs2 = self.lookupTable(rhs2)
-            elif type(rhs2) is Node and rhs2.type is TokenType.ID:
-                return self.undefinedHandler(rhs2.value)
-
         if func_node.type is TokenType.LAMBDA:
             return Node(TokenType.LIST, func_node)
 
@@ -522,6 +503,24 @@ class CuteInterpreter(object):
                         del symbolTable[listOfFormal[i]]
 
                 return expr
+        if func_node.type is TokenType.DEFINE:
+            rhs2 = self.run_expr(rhs2)
+            if rhs2.type in [TokenType.TRUE, TokenType.FALSE]:
+                insertTable(rhs1.value, rhs2)
+            else:
+                insertTable(rhs1.value, rhs2.value)
+
+        elif rhs1 is not None and func_node.value.type is not TokenType.LAMBDA:
+            if symbolTable.has_key(rhs1.value):
+                rhs1 = self.lookupTable(rhs1)
+            elif rhs1.type is TokenType.ID:
+                return self.undefinedHandler(rhs1.value)
+
+            if rhs2 is not None and symbolTable.has_key(rhs2.value):
+                rhs2 = self.lookupTable(rhs2)
+            elif type(rhs2) is Node and rhs2.type is TokenType.ID:
+                return self.undefinedHandler(rhs2.value)
+
 
         if func_node.type is not TokenType.COND:
             expr_rhs1 = self.run_expr(rhs1)
@@ -755,10 +754,10 @@ def Test_method(input):
         print "…", printNode
 
 def Test_All():
-    #Test_method("( lambda ( x ) ( + x 1 ) )")
-    #Test_method("( define x 5 )")
-    #Test_method("( ( lambda ( x ) ( + x 1 ) ) 2 )")
-    #Test_method("( ( lambda ( x ) ( + x 1 ) ) a b )")
+    Test_method("( lambda ( x ) ( + x 1 ) )")
+    # Test_method("( define x 5 )")
+    # Test_method("( ( lambda ( x ) ( + x 1 ) ) 2 )")
+    # Test_method("( ( lambda ( x ) ( + x 1 ) ) a b )")
 
     while True:
         input = raw_input("> ")
