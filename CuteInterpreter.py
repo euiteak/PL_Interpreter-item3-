@@ -394,7 +394,8 @@ class CuteInterpreter(object):
             if int(expr_rhs1.value) < int(expr_rhs2.value): return self.TRUE_NODE
             return self.FALSE_NODE
         elif rela_node.type is TokenType.EQ:
-            if int(expr_rhs1.value) == int(expr_rhs2.value): return self.TRUE_NODE
+            if int(expr_rhs1.value) == int(expr_rhs2.value):
+                return self.TRUE_NODE
             return self.FALSE_NODE
         elif rela_node.type is TokenType.GT:
             if int(expr_rhs1.value) > int(expr_rhs2.value): return self.TRUE_NODE
@@ -633,7 +634,7 @@ class CuteInterpreter(object):
                     return self.undefinedHandler(cond.next.value)
                 if cond.next.type is TokenType.LIST:
                     return Node(cond.next.type,cond.next.value)
-                return Node(cond.next.type, cond.next)
+                return Node(cond.next.type, cond.next.value)
             elif rhs1.next is None and cond.type is TokenType.FALSE:
                 return None
             else:
@@ -686,7 +687,7 @@ class CuteInterpreter(object):
         if op_code.type is TokenType.ID:
             param = op_code.next
             op_code = self.lookupTable(Node(TokenType.ID, op_code.value))
-            op_code.next = param
+            op_code.next = self.run_expr(param)
             return self.run_func(op_code)
         if op_code.type is TokenType.LAMBDA or op_code.value.type is TokenType.LAMBDA:
             return self.run_func(op_code)
@@ -779,7 +780,7 @@ def Test_method(input):
         print "…", printNode
 
 def Test_All():
-    Test_method("( cdr ' ( 3 ) )")
+
     Test_method("( define x 6 )")
     Test_method("( define plus1 ( lambda ( x ) ( + x 3 ) ) )")
     Test_method("( plus1 2 )")
@@ -795,7 +796,10 @@ def Test_All():
     Test_method("( ( lambda ( x ) ( + x 1 ) ( + 1 1 ) ) 3 )")
     Test_method("( define malloc ( lambda ( a ) ( define sum ( lambda ( a ) ( + a a ) ) ) ( define sqrt ( lambda ( a ) ( * a a ) ) ) ( * ( sqrt a ) ( sum a ) ) )")
     Test_method("( malloc 3 )")
-
+    Test_method("( define fact ( lambda ( n ) ( cond ( ( = n 1 ) 1 ) ( #T ( * n ( fact ( - n 1 ) ) ) ) ) ) )")
+    Test_method("( fact 5 )")
+    Test_method("( define sum ( lambda ( n ) ( cond ( ( = n 1 ) 1 ) ( #T ( + n ( sum ( - n 1 ) ) ) ) ) ) )")
+    Test_method("( sum 10 )")
     while True:
         input = raw_input("> ")
         Test_method(input)
