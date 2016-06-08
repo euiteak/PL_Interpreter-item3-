@@ -795,6 +795,7 @@ def Test_All():
     Test_method("( ( lambda ( x ) ( + x 1 ) ( + 1 1 ) ) 3 )")
     Test_method("( define malloc ( lambda ( a ) ( define sum ( lambda ( a ) ( + a a ) ) ) ( define sqrt ( lambda ( a ) ( * a a ) ) ) ( * ( sqrt a ) ( sum a ) ) )")
     Test_method("( malloc 3 )")
+
     while True:
         input = raw_input("> ")
         Test_method(input)
