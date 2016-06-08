@@ -443,6 +443,7 @@ class CuteInterpreter(object):
 
         def insertTable(id, value):
             symbolTable[id] = value
+
         if func_node.type is TokenType.LAMBDA:
             return Node(TokenType.LIST, func_node)
 
@@ -524,7 +525,7 @@ class CuteInterpreter(object):
             else:
                 insertTable(rhs1.value, rhs2.value)
 
-        #elif rhs1 is not None and func_node.value.type is not TokenType.LAMBDA:
+        # elif rhs1 is not None and func_node.value is not None and func_node.value.type is not TokenType.LAMBDA:
         else:
             if symbolTable.has_key(rhs1.value):
                 rhs1 = self.lookupTable(rhs1)
@@ -536,10 +537,11 @@ class CuteInterpreter(object):
             elif type(rhs2) is Node and rhs2.type is TokenType.ID:
                 return self.undefinedHandler(rhs2.value)
 
-
         if func_node.type is not TokenType.COND:
             expr_rhs1 = self.run_expr(rhs1)
             if expr_rhs1 is None:
+                if func_node.type is TokenType.NULL_Q:
+                    return self.TRUE_NODE
                 return None
 
         if func_node.type is TokenType.CAR:
@@ -549,7 +551,6 @@ class CuteInterpreter(object):
             if result.type is not TokenType.LIST:
                 return result
             return create_quote_node(result)
-
         elif func_node.type is TokenType.CDR:
             # 작성
             if not is_quote_list(expr_rhs1):
@@ -557,6 +558,9 @@ class CuteInterpreter(object):
             result = pop_node_from_quote_list(expr_rhs1)
             if result.next is not None:
                 return create_quote_node(result.next, True)
+            #else:
+            #    a = create_quote_node(Node(TokenType.ID), True)
+            #    return a
 
         elif func_node.type is TokenType.CONS:
             expr_rhs2 = self.run_expr(rhs2)
@@ -594,7 +598,8 @@ class CuteInterpreter(object):
                 # 작성
 
         elif func_node.type is TokenType.NULL_Q:
-            if list_is_null(rhs1): return self.TRUE_NODE
+            if list_is_null(expr_rhs1): return self.TRUE_NODE
+            #if list_is_null(rhs1): return self.TRUE_NODE
             return self.FALSE_NODE
 
         elif func_node.type is TokenType.NOT:
@@ -676,10 +681,15 @@ class CuteInterpreter(object):
                 [TokenType.DEFINE, TokenType.CAR, TokenType.CDR, TokenType.CONS, TokenType.ATOM_Q,\
                  TokenType.EQ_Q, TokenType.NULL_Q, TokenType.NOT, TokenType.COND]:
             return self.run_func(op_code)
-        if op_code.type is TokenType.LAMBDA or op_code.value.type is TokenType.LAMBDA:
-            return self.run_func(op_code)
         if op_code.type is TokenType.QUOTE:
             return l_node
+        if op_code.type is TokenType.ID:
+            param = op_code.next
+            op_code = self.lookupTable(Node(TokenType.ID, op_code.value))
+            op_code.next = param
+            return self.run_func(op_code)
+        if op_code.type is TokenType.LAMBDA or op_code.value.type is TokenType.LAMBDA:
+            return self.run_func(op_code)
         else:
             print "application: not a procedure;"
             print "expected a procedure that can be applied to arguments"
@@ -769,11 +779,22 @@ def Test_method(input):
         print "…", printNode
 
 def Test_All():
+    Test_method("( cdr ' ( 3 ) )")
+    Test_method("( define x 6 )")
+    Test_method("( define plus1 ( lambda ( x ) ( + x 3 ) ) )")
+    Test_method("( plus1 2 )")
+    Test_method("( define plus2 ( lambda ( x ) ( + ( plus1 x ) ( plus1 4 ) ) )")
+    Test_method("( plus2 3 )")
+    Test_method("( define lastitem ( lambda ( ls ) ( cond ( ( null? ( cdr ls ) ) ( car ls ) ) ( #T ( lastitem ( cdr ls ) ) ) ) ) )")
+    Test_method("( lastitem ' ( 1 2 3 ) )")
+    Test_method("( define cube ( lambda ( n ) ( define sqrt ( lambda ( n ) ( * n n ) ) ) ( * ( sqrt n ) n ) ) )")
+    Test_method("( cube 3 )")
     Test_method("( lambda ( x ) ( + x 1 ) )")
-    # Test_method("( define x 5 )")
-    # Test_method("( ( lambda ( x ) ( + x 1 ) ) 2 )")
-    # Test_method("( ( lambda ( x ) ( + x 1 ) ) a b )")
-
+    Test_method("( define x 5 )")
+    Test_method("( ( lambda ( x ) ( + x 1 ) ) x )")
+    Test_method("( ( lambda ( x ) ( + x 1 ) ( + 1 1 ) ) 3 )")
+    Test_method("( define malloc ( lambda ( a ) ( define sum ( lambda ( a ) ( + a a ) ) ) ( define sqrt ( lambda ( a ) ( * a a ) ) ) ( * ( sqrt a ) ( sum a ) ) )")
+    Test_method("( malloc 3 )")
     while True:
         input = raw_input("> ")
         Test_method(input)
